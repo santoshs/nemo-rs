@@ -1,10 +1,10 @@
 use anyhow::{anyhow, Result};
-use reqwest;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json;
 
 use crate::steerlm::SteerLM;
+use crate::utils::post;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -117,11 +117,15 @@ pub struct Completion {
 }
 
 impl Completion {
-    pub fn new(config: CompletionConfig, model: String) -> Result<Completion> {
+    pub fn new(
+        config: CompletionConfig,
+        model: String,
+        token: Option<String>,
+    ) -> Result<Completion> {
         return Ok(Completion {
             config,
             model,
-            api_token: None,
+            api_token: token,
         });
     }
 
@@ -130,11 +134,7 @@ impl Completion {
     }
 
     pub async fn complete(self, prompt: String) -> Result<CompletionResponse> {
-        let client = reqwest::Client::new();
-        let api_url = format!(
-            "https://api.llm.ngc.nvidia.com/v1/models/{}/completions",
-            self.model
-        );
+        let endpoint = format!("{}/models/{}/completions", crate::API_URL, self.model);
 
         let completion_request = CompletionRequest {
             prompt,
@@ -146,20 +146,8 @@ impl Completion {
             "{}",
             serde_json::to_string_pretty(&completion_request).unwrap()
         );
-        let token = if self.api_token.is_some() {
-            self.api_token.unwrap()
-        } else {
-            std::env::var("NVIDIA_NGC_API_KEY").expect("NVIDIA_NGC_API_KEY must be set.")
-        };
 
-        let response = client
-            .post(api_url)
-            .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", token))
-            .header("x-stream", "false")
-            .json(&completion_request)
-            .send()
-            .await?;
+        let response = post(&completion_request, endpoint, self.api_token).await?;
 
         if response.status().is_success() {
             Ok(response.json::<CompletionResponse>().await?)

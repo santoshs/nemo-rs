@@ -1,0 +1,35 @@
+* nemo-rs
+  Rust API for NIVIDA NeMo LLM (unoffical)
+
+*** Implemented Endpoints
+    - [X] List models
+    - [X] Completions
+    - [X] Count tokens
+    - [ ] Chat with model
+    - [ ] Count tokens for chat
+    - [ ] List all customizations
+    - [ ] List customizations for a specific model
+    - [ ] Create model customizations
+    - [ ] List all KBs
+    - [ ] Create a Knowledge Base
+    - [ ] Delete specified KB
+    - [ ] Update a Knowledge Base
+    - [ ] Query a knowledge base
+    - [ ] List all files in KB
+    - [ ] Add file to Knowledge Base
+    - [ ] Download the extracted file from Knowledge Base
+    - [ ] Get KB file
+    - [ ] Delete file from a Knowledge Base
+    - [X] Generate Embeddings
+    - [ ] List all files
+    - [ ] Upload file
+    - [ ] Get file
+    - [ ] Delete file
+    - [ ] Get info about model customization
+
+
+    /Note: Embeddings endpoint doesn't seem to be working as of the last
+    commit. So ~embeddings_test~ test will fail!/
+
+* Tasks
+*** TODO Improve error handling
