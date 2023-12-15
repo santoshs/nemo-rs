@@ -52,11 +52,8 @@ mod tests {
     #[test]
     fn embeddings_test() {
         dotenv().ok();
-        let e = Embeddings::new("gpt-43b-001".to_string(), None).unwrap();
-        println!(
-            "{:?}",
-            async_test!(e.embeddings(vec!["Rust embeddings test".to_string()])).unwrap()
-        );
+        let e = Embeddings::new(EmbeddingModel::E5LargeUnsupervised, None).unwrap();
+        async_test!(e.embeddings(vec!["Rust embeddings test".to_string()])).unwrap();
     }
 
     #[test]

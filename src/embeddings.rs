@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use serde::Deserialize;
 use serde::Serialize;
+use std::fmt;
 
 use crate::utils::post;
 
@@ -11,21 +12,43 @@ pub struct EmbeddingsRequest {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EmbeddingsResponse {
-    pub embeddings: Vec<Vec<f64>>,
-    pub model: String,
+    pub embeddings: Box<Vec<Vec<f64>>>,
+    pub model: EmbeddingModel,
+}
+
+// The supported models for embeddings
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum EmbeddingModel {
+    #[default]
+    #[serde(rename = "e5-large-unsupervised")]
+    E5LargeUnsupervised,
+    #[serde(rename = "nre-002")]
+    NRE002,
+    #[serde(rename = "nre-001")]
+    NRE001,
+}
+
+impl fmt::Display for EmbeddingModel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            EmbeddingModel::E5LargeUnsupervised => write!(f, "{}", "e5-large-unsupervised"),
+            EmbeddingModel::NRE001 => write!(f, "{}", "nre-001"),
+            EmbeddingModel::NRE002 => write!(f, "{}", "nre-002"),
+        }
+    }
 }
 
 pub struct Embeddings {
-    model: String,
+    model: EmbeddingModel,
     token: Option<String>,
 }
 
 impl Embeddings {
-    pub fn new(model: String, token: Option<String>) -> Result<Embeddings> {
+    pub fn new(model: EmbeddingModel, token: Option<String>) -> Result<Embeddings> {
         Ok(Embeddings { model, token })
     }
 
-    pub async fn embeddings(self, content: Vec<String>) -> Result<Vec<Vec<f64>>> {
+    pub async fn embeddings(self, content: Vec<String>) -> Result<Box<Vec<Vec<f64>>>> {
         if content.len() > 50 {
             return Err(anyhow!("Content list exceeds maximum limit of 50"));
         }
