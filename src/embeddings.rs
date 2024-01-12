@@ -12,7 +12,7 @@ pub struct EmbeddingsRequest {
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EmbeddingsResponse {
-    pub embeddings: Box<Vec<Vec<f64>>>,
+    pub embeddings: Box<Vec<Vec<f32>>>,
     pub model: EmbeddingModel,
 }
 
@@ -48,7 +48,7 @@ impl Embeddings {
         Ok(Embeddings { model, token })
     }
 
-    pub async fn embeddings(self, content: Vec<String>) -> Result<Box<Vec<Vec<f64>>>> {
+    pub async fn embeddings(self, content: Vec<String>) -> Result<Box<Vec<Vec<f32>>>> {
         if content.len() > 50 {
             return Err(anyhow!("Content list exceeds maximum limit of 50"));
         }

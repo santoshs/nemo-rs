@@ -27,9 +27,5 @@
     - [ ] Delete file
     - [ ] Get info about model customization
 
-
-    /Note: Embeddings endpoint doesn't seem to be working as of the last
-    commit. So ~embeddings_test~ test will fail!/
-
 * Tasks
 *** TODO Improve error handling
