@@ -122,11 +122,11 @@ impl Completion {
         model: String,
         token: Option<String>,
     ) -> Result<Completion> {
-        return Ok(Completion {
+        Ok(Completion {
             config,
             model,
             api_token: token,
-        });
+        })
     }
 
     pub fn set_token(mut self, token: String) {

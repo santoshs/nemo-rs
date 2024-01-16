@@ -39,11 +39,8 @@ pub struct Deprecated {
 pub async fn list_models(token: Option<String>) -> Result<Vec<Model>> {
     let endpoint = format!("{}/models", crate::API_URL);
     let client = reqwest::Client::new();
-    let token = if token.is_some() {
-        token.unwrap()
-    } else {
-        std::env::var("NGC_API_KEY").expect("NGC_API_KEY must be set.")
-    };
+    let token =
+        token.unwrap_or_else(|| std::env::var("NGC_API_KEY").expect("NGC_API_KEY must be set."));
 
     let response = client
         .get(endpoint)

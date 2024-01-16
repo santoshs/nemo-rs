@@ -31,9 +31,9 @@ pub enum EmbeddingModel {
 impl fmt::Display for EmbeddingModel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            EmbeddingModel::E5LargeUnsupervised => write!(f, "{}", "e5-large-unsupervised"),
-            EmbeddingModel::NRE001 => write!(f, "{}", "nre-001"),
-            EmbeddingModel::NRE002 => write!(f, "{}", "nre-002"),
+            EmbeddingModel::E5LargeUnsupervised => write!(f, "e5-large-unsupervised"),
+            EmbeddingModel::NRE001 => write!(f, "nre-001"),
+            EmbeddingModel::NRE002 => write!(f, "nre-002"),
         }
     }
 }
@@ -48,25 +48,27 @@ impl Embeddings {
         Ok(Embeddings { model, token })
     }
 
-    pub async fn embeddings(self, content: Vec<String>) -> Result<Box<Vec<Vec<f32>>>> {
+    pub async fn embeddings(&self, content: Vec<String>) -> Result<Box<Vec<Vec<f32>>>> {
         if content.len() > 50 {
             return Err(anyhow!("Content list exceeds maximum limit of 50"));
         }
+
         let endpoint = format!("{}/embeddings/{}", crate::API_URL, self.model);
         let embeddings_request = EmbeddingsRequest { content };
 
-        #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-        struct NemoError {
-            request_id: String,
-            message: String,
-        }
-        let response = post(&embeddings_request, endpoint, self.token).await?;
+        let response = post(&embeddings_request, endpoint, self.token.clone()).await?;
         let status = response.status();
         if status.is_success() {
-            Ok(response.json::<EmbeddingsResponse>().await?.embeddings)
+            match response.json::<EmbeddingsResponse>().await {
+                Ok(er) => Ok(er.embeddings),
+                Err(e) => Err(e.into()),
+            }
         } else {
-            let err = response.json::<NemoError>().await?;
-            Err(anyhow!(format!("{}: {}", status, err.message)))
+            Err(anyhow!(format!(
+                "{}: {}",
+                status,
+                response.text().await.unwrap()
+            )))
         }
     }
 }

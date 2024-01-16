@@ -7,11 +7,8 @@ pub async fn post<T: Serialize + ?Sized>(
     token: Option<String>,
 ) -> Result<Response, Error> {
     let client = reqwest::Client::new();
-    let token = if token.is_some() {
-        token.unwrap()
-    } else {
-        std::env::var("NGC_API_KEY").expect("NGC_API_KEY must be set.")
-    };
+    let token =
+        token.unwrap_or_else(|| std::env::var("NGC_API_KEY").expect("NGC_API_KEY must be set."));
 
     client
         .post(endpoint)
