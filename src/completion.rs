@@ -156,3 +156,98 @@ impl Completion {
         }
     }
 }
+
+use reqwest::{header, Client};
+
+#[derive(Serialize)]
+struct RequestBody {
+    messages: Vec<Message>,
+    temperature: f64,
+    top_p: f64,
+    max_tokens: u32,
+    seed: u32,
+    stream: bool,
+}
+
+#[derive(Serialize)]
+struct Message {
+    content: String,
+    role: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ResponseData {
+    id: String,
+    choices: Vec<Choice>,
+}
+
+#[derive(Deserialize, Debug)]
+struct Choice {
+    index: u32,
+    delta: Delta,
+    finish_reason: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct Delta {
+    role: String,
+    content: String,
+}
+
+// TODO should move into the Completion struct implementation
+pub async fn get_summary(input: String, token: Option<String>) -> Result<String> {
+    let token = token.unwrap_or_else(|| {
+        std::env::var("NV_FOUNDATIONAL_MODEL_TOKEN")
+            .expect("NV_FOUNDATIONAL_MODEL_TOKEN must be set.")
+    });
+
+    // Set up the client
+    let client = Client::new();
+
+    // Define the request body using the struct
+    let request_body = RequestBody {
+        messages: vec![Message {
+            content: input,
+            role: "user".to_string(),
+        }],
+        temperature: 0.2,
+        top_p: 0.7,
+        max_tokens: 1024,
+        seed: 42,
+        stream: true,
+    };
+
+    // Define the headers
+    let mut headers = header::HeaderMap::new();
+    headers.insert(header::AUTHORIZATION, format!("Bearer {token}").parse()?);
+    headers.insert(header::ACCEPT, "text/event-stream".parse()?);
+    headers.insert(header::CONTENT_TYPE, "application/json".parse()?);
+
+    // Send the request
+    let mut response = client.post("https://api.nvcf.nvidia.com/v2/nvcf/pexec/functions/7b3e3361-4266-41c8-b312-f5e33c81fc92")
+        .headers(headers)
+        .json(&request_body)
+        .send()
+        .await?;
+
+    let mut output = Vec::new();
+    // Process the stream
+    while let Some(chunk) = response.chunk().await? {
+        let mut finish = false;
+        let text = String::from_utf8(chunk.to_vec())?;
+        let json_str = text.trim_start_matches("data:");
+        if let Ok(response_data) = serde_json::from_str::<ResponseData>(json_str) {
+            for choice in response_data.choices {
+                if choice.finish_reason.is_some() {
+                    finish = true;
+                }
+                output.push(choice.delta.content);
+            }
+        }
+        if finish {
+            break;
+        }
+    }
+
+    Ok(output.join(""))
+}
